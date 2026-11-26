@@ -1,3 +1,3 @@
 Use `literalize_call` for direct calls, invocation recipes, and typed native invocations.
-Replace imports of `literalize_invocations` with `literalize_call`.
-Pass native recipes directly to `literalize_call` or construct `NativeInvocation` objects in Python.
+`literalize_invocations` is deprecated and remains available during migration.
+To migrate, replace the import and call name with `literalize_call` and keep the same arguments.

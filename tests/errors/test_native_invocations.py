@@ -306,3 +306,19 @@ def test_direct_calls_reject_incomplete_or_mixed_options(
         _ = _invoke_dynamic(
             literalizer.literalize_call, language=ObjectiveC(), **options
         )
+
+
+def test_typed_invocation_tolerates_explicit_defaults() -> None:
+    """Default-valued options can be forwarded by dynamic callers."""
+    language = ObjectiveC()
+    invocation = literalizer.NativeInvocation(
+        target=literalizer.ConstructorTarget(class_name="NSObject"),
+        arguments=(),
+    )
+    assert _invoke_dynamic(
+        literalizer.literalize_call,
+        language=language,
+        invocation=invocation,
+        per_element=True,
+        wrap_in_file=False,
+    ) == literalizer.literalize_call(language=language, invocation=invocation)

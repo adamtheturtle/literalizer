@@ -15,6 +15,11 @@ Core functions
 
 .. autofunction:: literalize_call
 
+``literalize_invocations`` is deprecated.
+Move typed and recipe calls to :func:`literalize_call` with the same arguments.
+
+.. autofunction:: literalize_invocations
+
 File composition
 ----------------
 
@@ -67,6 +72,9 @@ Native invocations
 ------------------
 
 Pass a :class:`NativeInvocation` to :func:`literalize_call` with the language and any binding or placement options.
+Use :func:`native_invocation_from_data` to bind a native recipe to in-memory values and get a typed invocation for rendering or composition.
+
+.. autofunction:: native_invocation_from_data
 
 .. autoclass:: ScalarType
    :members:

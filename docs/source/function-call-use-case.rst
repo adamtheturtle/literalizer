@@ -650,6 +650,7 @@ It requires a companion source and an expression-style call backend; prefix, pos
 The called functions/classes and checker must be supplied by the consumer.
 The checker always receives positional arguments, independently of the configured style for the inner call.
 
-Generic calls retain the existing :func:`~literalizer.literalize_call` input semantics, literal conversions, bindings, preambles, and errors.
-Use ``per_element=True`` and list rows for shared examples.
+For a generic recipe, supply ``source`` and ``input_format``, plus any row, companion source, or result binding options listed in the recipe overload of :func:`~literalizer.literalize_call`.
+Use a top-level list of rows with ``per_element=True``.
+Root selection with ``input_root_key``, transforms, references, and file wrapping are options of the direct call form.
 ``pre_indent_level`` places generic fragments in the caller's scope; nonzero ``initial_column`` remains supported only for native invocations.
