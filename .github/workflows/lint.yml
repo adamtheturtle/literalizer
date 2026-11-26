@@ -164,7 +164,7 @@ jobs:
       # the Nix version.
       - name: Install Nix
         timeout-minutes: 10
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@v32
         with:
           install_url: https://releases.nixos.org/nix/nix-2.34.7/install
       # ``gforth`` is pinned to ``0.7.3+dfsg-9build4.1`` (the Ubuntu
