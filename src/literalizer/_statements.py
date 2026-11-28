@@ -9,6 +9,7 @@ each *part* of a statement instead of on the statement (issue #4548).
 """
 
 import dataclasses
+import enum
 import functools
 import re
 from typing import Protocol, runtime_checkable
@@ -141,6 +142,14 @@ class CallLiteralSyntax:
         )
 
 
+class _StringScanMode(enum.Enum):
+    """Escape handling within a quoted literal."""
+
+    BACKSLASH = enum.auto()
+    RAW = enum.auto()
+    VERBATIM = enum.auto()
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _CommentScanner:
@@ -160,18 +169,19 @@ class _CommentScanner:
     def split(self) -> _TrailingLineComments:
         """Keep only the final run of line comments separate."""
         cursor = 0
-        trailing_start = len(self.statement)
+        trailing_start: int | None = None
         while cursor < len(self.statement):
             if self.statement[cursor].isspace():
                 cursor += 1
             elif self.statement.startswith(self.prefix, cursor):
-                trailing_start = min(trailing_start, cursor)
+                if trailing_start is None:
+                    trailing_start = cursor
                 cursor = self._end_after(delimiter="\n", cursor=cursor)
             else:
-                trailing_start = len(self.statement)
+                trailing_start = None
                 end = self._span_end(cursor=cursor)
                 cursor = cursor + 1 if end is None else end
-        if trailing_start == len(self.statement):
+        if trailing_start is None:
             return _TrailingLineComments(
                 code=self.statement, trailing_comments=""
             )
@@ -197,9 +207,8 @@ class _CommentScanner:
             return self._string_end(
                 cursor=cursor + 2,
                 delimiter="/",
-                raw=False,
-                verbatim=False,
-                interpolate=False,
+                mode=_StringScanMode.BACKSLASH,
+                interpolation_opener=None,
             )
         if self.backtick_strings and self.statement.startswith("`", cursor):
             return self._end_after(delimiter="`", cursor=cursor + 1)
@@ -210,7 +219,9 @@ class _CommentScanner:
             if end is not None:
                 return end
         if self.statement[cursor] in self.quotes:
-            end = self._quoted_end(cursor=cursor, raw=False, verbatim=False)
+            end = self._quoted_end(
+                cursor=cursor, mode=_StringScanMode.BACKSLASH
+            )
         else:
             end = self._prefixed_string_end(cursor=cursor)
         return end
@@ -231,7 +242,7 @@ class _CommentScanner:
                 continue
             if self.statement[quote_start : quote_start + 1] in self.quotes:
                 return self._quoted_end(
-                    cursor=quote_start, raw=True, verbatim=False
+                    cursor=quote_start, mode=_StringScanMode.RAW
                 )
         for opening in ('@"', '@$"'):
             if self.verbatim_strings and self.statement.startswith(
@@ -239,34 +250,36 @@ class _CommentScanner:
             ):
                 return self._quoted_end(
                     cursor=cursor + len(opening) - 1,
-                    raw=False,
-                    verbatim=True,
+                    mode=_StringScanMode.VERBATIM,
                 )
         return None
 
     @beartype
-    def _quoted_end(self, *, cursor: int, raw: bool, verbatim: bool) -> int:
+    def _quoted_end(self, *, cursor: int, mode: _StringScanMode) -> int:
         """Choose the quote delimiter and whether interpolation
         applies.
         """
         quote = self.statement[cursor]
         delimiter = quote
-        if not verbatim and self.statement.startswith(quote * 3, cursor):
+        if mode is not _StringScanMode.VERBATIM and self.statement.startswith(
+            quote * 3, cursor
+        ):
             delimiter = quote * 3
         syntax = self.interpolation_syntax
         preceding = self.statement[max(0, cursor - 2) : cursor]
-        interpolate = (
-            not raw
+        interpolation_opener = None
+        if (
+            mode is not _StringScanMode.RAW
             and syntax is not None
             and quote in syntax[1]
             and (syntax[0] != "{" or "$" in preceding)
-        )
+        ):
+            interpolation_opener = syntax[0]
         return self._string_end(
             cursor=cursor + len(delimiter),
             delimiter=delimiter,
-            raw=raw,
-            verbatim=verbatim,
-            interpolate=interpolate,
+            mode=mode,
+            interpolation_opener=interpolation_opener,
         )
 
     @beartype
@@ -275,29 +288,32 @@ class _CommentScanner:
         *,
         cursor: int,
         delimiter: str,
-        raw: bool,
-        verbatim: bool,
-        interpolate: bool,
+        mode: _StringScanMode,
+        interpolation_opener: str | None,
     ) -> int:
         """Follow escapes and interpolation to the closing delimiter."""
-        syntax = self.interpolation_syntax if interpolate else None
         while cursor < len(self.statement):
-            if (verbatim and self.statement.startswith('""', cursor)) or (
-                not raw and not verbatim and self.statement[cursor] == "\\"
+            if (
+                mode is _StringScanMode.VERBATIM
+                and self.statement.startswith('""', cursor)
+            ) or (
+                mode is _StringScanMode.BACKSLASH
+                and self.statement[cursor] == "\\"
             ):
                 cursor += 2
             elif self.statement.startswith(delimiter, cursor):
                 return cursor + len(delimiter)
-            elif (
-                syntax is not None
-                and syntax[0] == "{"
-                and self.statement.startswith("{{", cursor)
+            elif interpolation_opener == "{" and self.statement.startswith(
+                "{{", cursor
             ):
                 cursor += 2
-            elif syntax is not None and self.statement.startswith(
-                syntax[0], cursor
+            elif (
+                interpolation_opener is not None
+                and self.statement.startswith(interpolation_opener, cursor)
             ):
-                cursor = self._expression_end(cursor=cursor + len(syntax[0]))
+                cursor = self._expression_end(
+                    cursor=cursor + len(interpolation_opener)
+                )
             else:
                 cursor += 1
         return len(self.statement)
