@@ -906,16 +906,19 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
     )
 
 
+class _YamlAnchorState(enum.Enum):
+    """Whether aliases can safely refer to a YAML anchor binding."""
+
+    OPEN_COLLECTION = enum.auto()
+    COMPLETE = enum.auto()
+
+
 @beartype
-def _record_anchor_binding(
-    *,
-    anchor: str,
-    binding: int,
-    latest_binding: dict[str, int],
-) -> None:
-    """Note that *anchor* now names the node numbered *binding*."""
-    if anchor != "":
-        latest_binding[anchor] = binding
+@dataclasses.dataclass
+class _YamlAnchorBinding:
+    """One binding of an anchor name, which may be shadowed."""
+
+    state: _YamlAnchorState
 
 
 @beartype
@@ -930,41 +933,39 @@ def _yaml_event_anchor(*, event: _AnchoredYamlEvent) -> str:
 def _self_referential_alias(*, source: str) -> str | None:
     """Return the anchor of an alias written inside the node it names.
 
-    An anchor name can be bound again further in, and an alias takes the
-    most recent binding, so each binding is numbered rather than tracked
-    by name alone: ``[1, &x 2, *x]`` names the scalar and is not a cycle
-    even while the sequence that first bound ``x`` is still open.
+    An alias uses the most recent binding of its anchor name. Closing a
+    collection completes that particular binding even if a newer node
+    has since claimed the same name. For example, in ``&x [1, &x 2, *x]``
+    the alias refers to the scalar while the outer sequence is still open.
     """
-    binding_count = 0
-    latest_binding: dict[str, int] = {}
-    open_bindings: set[int] = set()
-    open_collections: list[int] = []
+    latest_binding: dict[str, _YamlAnchorBinding] = {}
+    open_collections: list[_YamlAnchorBinding] = []
     try:
         for event in require_yaml(yaml=YAML()).parse(stream=source):
             match event:
                 case CollectionStartEvent():
                     opened = _yaml_event_anchor(event=event)
-                    binding_count += 1
-                    _record_anchor_binding(
-                        anchor=opened,
-                        binding=binding_count,
-                        latest_binding=latest_binding,
+                    binding = _YamlAnchorBinding(
+                        state=_YamlAnchorState.OPEN_COLLECTION
                     )
-                    open_bindings.add(binding_count)
-                    open_collections.append(binding_count)
+                    open_collections.append(binding)
+                    if opened != "":
+                        latest_binding[opened] = binding
                 case CollectionEndEvent():
-                    open_bindings.discard(open_collections.pop())
+                    open_collections.pop().state = _YamlAnchorState.COMPLETE
                 case ScalarEvent():
                     named = _yaml_event_anchor(event=event)
-                    binding_count += 1
-                    _record_anchor_binding(
-                        anchor=named,
-                        binding=binding_count,
-                        latest_binding=latest_binding,
-                    )
+                    if named != "":
+                        latest_binding[named] = _YamlAnchorBinding(
+                            state=_YamlAnchorState.COMPLETE
+                        )
                 case AliasEvent():
                     alias = _yaml_event_anchor(event=event)
-                    if latest_binding.get(alias) in open_bindings:
+                    target = latest_binding.get(alias)
+                    if (
+                        target is not None
+                        and target.state is _YamlAnchorState.OPEN_COLLECTION
+                    ):
                         return alias
                 case _:
                     pass
