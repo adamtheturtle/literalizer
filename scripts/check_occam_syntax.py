@@ -1,26 +1,43 @@
 """Check syntax of an Occam-pi golden file."""
 
+import enum
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
 import click
 
 
-def _strip_comment(line: str) -> str:
-    """Strip an occam-pi inline comment (``--`` to end of line)."""
-    in_string = False
-    i = 0
-    while i < len(line):
-        ch = line[i]
-        if ch == "\\" and in_string:
-            i += 2
-            continue
-        if ch == '"':
-            in_string = not in_string
-        elif not in_string and line[i : i + 2] == "--":
-            return line[:i].rstrip()
-        i += 1
-    return line
+class _ScanMode(enum.Enum):
+    """Lexical context within an Occam-pi fixture line."""
+
+    CODE = enum.auto()
+    STRING = enum.auto()
+    STRING_ESCAPE = enum.auto()
+
+
+def _structural_brackets(*, line: str) -> Iterator[str]:
+    """Yield square brackets outside strings and inline comments."""
+    mode = _ScanMode.CODE
+    for index, character in enumerate(iterable=line):
+        match mode:
+            case _ScanMode.STRING_ESCAPE:
+                mode = _ScanMode.STRING
+            case _ScanMode.STRING:
+                if character == "\\":
+                    mode = _ScanMode.STRING_ESCAPE
+                elif character == '"':
+                    mode = _ScanMode.CODE
+            case _ScanMode.CODE:
+                match character:
+                    case '"':
+                        mode = _ScanMode.STRING
+                    case "[" | "]":
+                        yield character
+                    case "-" if line.startswith("-", index + 1):
+                        return
+                    case _:
+                        pass
 
 
 def _check_type_block(lines: list[str], term_index: int) -> str | None:
@@ -68,24 +85,13 @@ def _check_brackets(lines: list[str]) -> str | None:
     """Return an error if square brackets are unbalanced."""
     depth = 0
     for line_num, line in enumerate(iterable=lines, start=1):
-        clean = _strip_comment(line=line)
-        in_string = False
-        i = 0
-        while i < len(clean):
-            ch = clean[i]
-            if ch == "\\" and in_string:
-                i += 2
-                continue
-            if ch == '"':
-                in_string = not in_string
-            elif not in_string:
-                if ch == "[":
-                    depth += 1
-                elif ch == "]":
-                    depth -= 1
-                    if depth < 0:
-                        return f"Unmatched ']' at line {line_num}"
-            i += 1
+        for bracket in _structural_brackets(line=line):
+            if bracket == "[":
+                depth += 1
+            else:
+                depth -= 1
+                if depth < 0:
+                    return f"Unmatched ']' at line {line_num}"
 
     if depth != 0:
         return f"Unbalanced '[': {depth} unclosed bracket(s)"
