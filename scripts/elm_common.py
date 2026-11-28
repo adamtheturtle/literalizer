@@ -92,16 +92,29 @@ def prime_elm_home(*, elm_path: str, elm_home: Path) -> None:
             raise RuntimeError(msg)
 
 
+@dataclasses.dataclass(frozen=True)
+class _PendingElmHome:
+    """Configuration for the worker's first cache copy."""
+
+    primed: Path
+    workers_root: Path
+
+
+@dataclasses.dataclass(frozen=True)
+class _ReadyElmHome:
+    """The private cache the worker uses for subsequent commands."""
+
+    path: Path
+
+
 @dataclasses.dataclass
 class _ElmHomeState:
-    """Mutable container for per-worker ELM_HOME state."""
+    """The worker's cache lifecycle, initially unconfigured."""
 
-    primed: Path | None
-    workers_root: Path | None
-    worker_dir: Path | None
+    home: _PendingElmHome | _ReadyElmHome | None
 
 
-_state = _ElmHomeState(primed=None, workers_root=None, worker_dir=None)
+_state = _ElmHomeState(home=None)
 
 
 def init_worker_elm_home(primed_elm_home: str, worker_homes_root: str) -> None:
@@ -116,8 +129,11 @@ def init_worker_elm_home(primed_elm_home: str, worker_homes_root: str) -> None:
     ``os._exit`` (CPython's ``multiprocessing._bootstrap``), which
     skips registered ``atexit`` callbacks on Python <= 3.14.
     """
-    _state.primed = Path(primed_elm_home)
-    _state.workers_root = Path(worker_homes_root)
+    if not isinstance(_state.home, _ReadyElmHome):
+        _state.home = _PendingElmHome(
+            primed=Path(primed_elm_home),
+            workers_root=Path(worker_homes_root),
+        )
 
 
 def worker_elm_home() -> Path:
@@ -128,21 +144,22 @@ def worker_elm_home() -> Path:
     ELM_HOME (it locks the cache and fails with "resource busy"),
     so each worker keeps its own copy for its lifetime.
     """
-    if _state.worker_dir is not None:
-        return _state.worker_dir
-    if _state.primed is None or _state.workers_root is None:
+    home = _state.home
+    if isinstance(home, _ReadyElmHome):
+        return home.path
+    if home is None:
         msg = "init_worker_elm_home was not called"
         raise RuntimeError(msg)
     worker_dir = Path(
         tempfile.mkdtemp(
             prefix="elm-home-worker-",
             suffix=NOINDEX_SUFFIX,
-            dir=_state.workers_root,
+            dir=home.workers_root,
         ),
     )
-    _ = shutil.copytree(src=_state.primed, dst=worker_dir, dirs_exist_ok=True)
-    _state.worker_dir = worker_dir
-    return _state.worker_dir
+    _ = shutil.copytree(src=home.primed, dst=worker_dir, dirs_exist_ok=True)
+    _state.home = _ReadyElmHome(path=worker_dir)
+    return worker_dir
 
 
 _ELM_TRANSIENT_BINARY_FILE_MARKERS = ("openBinaryFile", "withBinaryFile")
