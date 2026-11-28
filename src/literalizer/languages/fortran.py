@@ -5,7 +5,7 @@ import datetime as dt
 import enum
 import re
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from functools import cached_property, partial
 from typing import TYPE_CHECKING, ClassVar
 
@@ -276,34 +276,53 @@ def _build_format_fortran_entry(
     return _format_fortran_entry
 
 
+class _FortranScanMode(enum.StrEnum):
+    """Lexical context and the delimiter that closes it."""
+
+    CODE = ""
+    SINGLE_QUOTED = "'"
+    DOUBLE_QUOTED = '"'
+
+
+@beartype
+def _fortran_unquoted_characters(
+    *, line: str, quotes: tuple[_FortranScanMode, ...]
+) -> Iterator[tuple[int, str]]:
+    """Yield offsets and characters outside the selected quotes."""
+    mode = _FortranScanMode.CODE
+    index = 0
+    while index < len(line):
+        character = line[index]
+        if mode is _FortranScanMode.CODE:
+            if character in quotes:
+                mode = _FortranScanMode(value=character)
+            else:
+                yield index, character
+        elif character == mode:
+            if line.startswith(mode, index + 1):
+                index += 2
+                continue
+            mode = _FortranScanMode.CODE
+        index += 1
+
+
 @beartype
 def _fortran_comment_pos(line: str) -> int | None:
-    """Return the index of the ``!`` comment character in *line* that
-    lies outside any string literal, or ``None`` if there is no comment.
-    """
-    in_single_quote = False
-    in_double_quote = False
-    i = 0
-    while i < len(line):
-        c = line[i]
-        match c:
-            case "'" if not in_double_quote:
-                if (
-                    in_single_quote
-                    and i + 1 < len(line)
-                    and line[i + 1] == "'"
-                ):
-                    i += 2
-                    continue
-                in_single_quote = not in_single_quote
-            case '"' if not in_single_quote:
-                in_double_quote = not in_double_quote
-            case "!" if not in_single_quote and not in_double_quote:
-                return i
-            case _:
-                pass
-        i += 1
-    return None
+    """Return the index of the first comment marker outside a string."""
+    return next(
+        (
+            index
+            for index, character in _fortran_unquoted_characters(
+                line=line,
+                quotes=(
+                    _FortranScanMode.SINGLE_QUOTED,
+                    _FortranScanMode.DOUBLE_QUOTED,
+                ),
+            )
+            if character == "!"
+        ),
+        None,
+    )
 
 
 @beartype
@@ -316,22 +335,18 @@ def _fortran_break_position(*, line: str, break_after: str) -> int | None:
     are passed over, so a break always leaves a shorter remainder and
     the wrapping loop always advances.
     """
-    in_single_quote = False
     break_at: int | None = None
+    # Generated expressions use single-quoted strings.
     # Discard only a partial final character from the byte-limited scan.
     # Break offsets still index the original, unmodified string.
-    scan = (
-        line.encode(encoding="utf-8")[:_FORTRAN_WRAP_COLUMN]
-        .decode(encoding="utf-8", errors="ignore")
-        .replace("''", "  ")
+    scan = line.encode(encoding="utf-8")[:_FORTRAN_WRAP_COLUMN].decode(
+        encoding="utf-8", errors="ignore"
     )
-    for index, character in enumerate(iterable=scan):
-        if character == "'":
-            in_single_quote = not in_single_quote
-        elif (
-            character in break_after
-            and not in_single_quote
-            and index >= len(_FORTRAN_CONTINUATION_PREFIX)
+    for index, character in _fortran_unquoted_characters(
+        line=scan, quotes=(_FortranScanMode.SINGLE_QUOTED,)
+    ):
+        if character in break_after and index >= len(
+            _FORTRAN_CONTINUATION_PREFIX
         ):
             break_at = index + 1
     return break_at
