@@ -101,6 +101,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 _HCL_DECLARATION_PATTERN = re.compile(pattern=r"^\s*[A-Za-z_]\w*\s*=")
+_HCL_BRACKET_DEPTH_CHANGE = {"[": 1, "{": 1, "(": 1, "]": -1, "}": -1, ")": -1}
 # Prevent HCL template interpolation and directive syntax.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
@@ -108,84 +109,49 @@ _format_string = make_backslash_string_formatter(
 )
 
 
+class _HclScanMode(enum.Enum):
+    """Lexical context carried across HCL lines."""
+
+    CODE = enum.auto()
+    STRING = enum.auto()
+    STRING_ESCAPE = enum.auto()
+
+
 @beartype
 @dataclasses.dataclass
 class _HclScanState:
-    """Mutable HCL bracket/string scan state across lines."""
+    """Track the lexical context and bracket depth across HCL lines."""
 
     depth: int
-    in_string: bool
-    escaped: bool
+    mode: _HclScanMode
 
-
-@beartype
-def _advance_outside_string(*, char: str, state: _HclScanState) -> None:
-    """Update *state* for a character that is not inside a string."""
-    match char:
-        case '"':
-            state.in_string = True
-        case "[" | "{" | "(":
-            state.depth += 1
-        case "]" | "}" | ")":
-            state.depth -= 1
-        case _:
-            pass
-
-
-@beartype
-def _advance_comment(
-    *,
-    line: str,
-    index: int,
-    state: _HclScanState,
-) -> int | None:
-    """Return the next index after handling a comment boundary.
-
-    ``None`` means the remainder of the line is a comment. Returning
-    *index* unchanged means that no comment boundary occurs there.
-    """
-    if state.in_string:
-        return index
-    if line.startswith("#", index):
-        return None
-    if line.startswith("/*", index):
-        return line.index("*/", index + 2) + 2
-    return index
-
-
-@beartype
-def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
-    r"""Update *state* by scanning brackets, strings, and comments.
-
-    Tracks ``\`` escapes inside strings so a backslash-escaped quote
-    (``"a\"b"``) does not flip ``in_string`` at the wrong character.
-    Without this, an odd number of escaped quotes would leave the
-    scanner stuck inside a phantom string and merge later statements
-    into it.
-    """
-    index = 0
-    while index < len(line):
-        next_index = _advance_comment(line=line, index=index, state=state)
-        if next_index is None:
-            return
-        if next_index != index:
-            index = next_index
-            continue
-        char = line[index]
-        index += 1
-        if state.escaped:
-            state.escaped = False
-            continue
-        if state.in_string:
-            match char:
-                case "\\":
-                    state.escaped = True
-                case '"':
-                    state.in_string = False
-                case _:
-                    pass
-            continue
-        _advance_outside_string(char=char, state=state)
+    @beartype
+    def advance(self, *, line: str) -> None:
+        """Scan a line for brackets, strings, escapes, and comments."""
+        index = 0
+        while index < len(line):
+            char = line[index]
+            index += 1
+            match self.mode:
+                case _HclScanMode.STRING_ESCAPE:
+                    self.mode = _HclScanMode.STRING
+                case _HclScanMode.STRING:
+                    if char == "\\":
+                        self.mode = _HclScanMode.STRING_ESCAPE
+                    elif char == '"':
+                        self.mode = _HclScanMode.CODE
+                case _HclScanMode.CODE:
+                    match char:
+                        case '"':
+                            self.mode = _HclScanMode.STRING
+                        case "#":
+                            return
+                        case "/" if line.startswith("*", index):
+                            index = line.index("*/", index + 1) + 2
+                        case _:
+                            self.depth += _HCL_BRACKET_DEPTH_CHANGE.get(
+                                char, 0
+                            )
 
 
 @beartype
@@ -199,15 +165,11 @@ def _split_top_level_statements(*, content: str) -> list[str]:
     """
     statements: list[str] = []
     current: list[str] = []
-    state = _HclScanState(
-        depth=0,
-        in_string=False,
-        escaped=False,
-    )
+    state = _HclScanState(depth=0, mode=_HclScanMode.CODE)
     for line in content.split(sep="\n"):
         current.append(line)
-        _advance_scan_state(line=line, state=state)
-        if state.depth == 0 and not state.in_string:
+        state.advance(line=line)
+        if state.depth == 0 and state.mode is _HclScanMode.CODE:
             statements.append("\n".join(current))
             current = []
     return statements
